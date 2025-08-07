@@ -1,0 +1,64 @@
+{
+  "name": "better-siws",
+  "version": "0.1.0",
+  "description": "Sign-In with Substrate (SIWS) plugin for Better Auth - Polkadot wallet authentication made simple",
+  "author": "Yogesh Kothari <@itsyogesh18>",
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./client": {
+      "types": "./client.d.ts",
+      "import": "./client.js",
+      "require": "./client.js"
+    }
+  },
+  "files": [
+    "dist",
+    "client.js",
+    "client.d.ts",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@talismn/siws": "^1.0.0"
+  },
+  "peerDependencies": {
+    "better-auth": "^1.0.0",
+    "zod": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "better-auth": "^1.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0",
+    "zod": "^3.0.0"
+  },
+  "keywords": [
+    "better-auth",
+    "authentication",
+    "polkadot",
+    "substrate",
+    "siws",
+    "web3",
+    "wallet"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/itsyogesh/better-siws"
+  },
+  "bugs": {
+    "url": "https://github.com/itsyogesh/better-siws/issues"
+  },
+  "homepage": "https://github.com/itsyogesh/better-siws#readme"
+}

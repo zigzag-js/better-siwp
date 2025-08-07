@@ -1,0 +1,5 @@
+packages:
+  # The npm package
+  - 'packages/*'
+  # Example applications
+  - 'examples/*'
