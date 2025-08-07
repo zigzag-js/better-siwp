@@ -53,3 +53,13 @@ packages/*/*.tsbuildinfo
 
 # package manager
 pnpm-lock.yaml
+
+# AI/development artifacts
+CLAUDE.md
+artifacts/
+*.backup
+*.temp
+
+# Test artifacts
+test-results/
+tests/screenshots/
