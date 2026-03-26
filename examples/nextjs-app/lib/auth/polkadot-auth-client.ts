@@ -1,15 +1,15 @@
 import { SiwsMessage } from "@talismn/siws";
 
 export class PolkadotAuthClient {
-  private appName = "Better-SIWS";
+  private appName = "Better-SIWP";
 
   async connect(walletName?: string) {
     // Dynamically import browser-only modules
     const { web3Enable, web3Accounts } = await import("@polkadot/extension-dapp");
-    
+
     // Enable all extensions first
     const allExtensions = await web3Enable(this.appName);
-    
+
     if (allExtensions.length === 0) {
       throw new Error(
         "No Polkadot wallet found. Please install Polkadot.js extension or another compatible wallet."
@@ -17,41 +17,50 @@ export class PolkadotAuthClient {
     }
 
     // If a specific wallet is requested, filter the extensions
-    const extensions = walletName 
+    const extensions = walletName
       ? allExtensions.filter(ext => ext.name === walletName)
       : allExtensions;
-    
+
     if (walletName && extensions.length === 0) {
       throw new Error(`${walletName} wallet not found or access denied.`);
     }
 
     // Get accounts from all enabled extensions or specific wallet
-    let accounts;
     if (walletName && extensions.length > 0) {
-      // Get accounts only from the selected wallet
-      accounts = await extensions[0].accounts.get();
-    } else {
-      // Get accounts from all wallets
-      accounts = await web3Accounts();
-    }
-    
-    if (accounts.length === 0) {
-      throw new Error(
-        "No accounts found. Please create or import an account in your wallet."
-      );
+      // Get accounts only from the selected wallet - returns InjectedAccount[]
+      const injected = await extensions[0].accounts.get();
+      if (injected.length === 0) {
+        throw new Error("No accounts found. Please create or import an account in your wallet.");
+      }
+      return injected.map(acc => ({
+        address: acc.address,
+        name: acc.name,
+        source: walletName,
+        type: acc.type,
+      }));
     }
 
-    return accounts;
+    // Get accounts from all wallets - returns InjectedAccountWithMeta[]
+    const accounts = await web3Accounts();
+    if (accounts.length === 0) {
+      throw new Error("No accounts found. Please create or import an account in your wallet.");
+    }
+    return accounts.map(acc => ({
+      address: acc.address,
+      name: acc.meta?.name,
+      source: acc.meta?.source,
+      type: acc.type,
+    }));
   }
 
-  async signIn(selectedAccount: any) {
+  async signIn(selectedAccount: { address: string; name?: string; source?: string }) {
     try {
       // Dynamically import browser-only modules
       const { web3FromAddress } = await import("@polkadot/extension-dapp");
       
       // 1. Request a nonce from Better-Auth
       const { authClient } = await import("@/lib/auth-client");
-      const nonceResponse = await authClient.siwe.nonce({
+      const nonceResponse = await authClient.siwp.nonce({
         walletAddress: selectedAccount.address,
       });
 
@@ -68,13 +77,13 @@ export class PolkadotAuthClient {
       const siwsMessage = new SiwsMessage({
         domain,
         address: selectedAccount.address,
-        statement: "Sign in with your Polkadot wallet to Better-SIWS",
+        statement: "Sign in with your Polkadot wallet to Better-SIWP",
         uri,
         version: "1.0.0",
         chainId: "polkadot:91b171bb158e2d3848fa23a9f1c25182",
         nonce,
-        issuedAt: new Date().toISOString(),
-        expirationTime: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours
+        issuedAt: Date.now(),
+        expirationTime: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
       });
 
       const message = siwsMessage.prepareMessage();
@@ -94,7 +103,7 @@ export class PolkadotAuthClient {
       }
 
       // 5. Verify the signature with Better-Auth
-      const verifyResponse = await authClient.siwe.verify({
+      const verifyResponse = await authClient.siwp.verify({
         message,
         signature: signResult.signature,
         walletAddress: selectedAccount.address,
@@ -104,8 +113,8 @@ export class PolkadotAuthClient {
         throw new Error(`Authentication failed: ${verifyResponse.error.message || verifyResponse.error}`);
       }
 
-      const authData = verifyResponse.data || verifyResponse;
-      if (!authData || (!authData.success && !authData.token)) {
+      const authData = verifyResponse.data;
+      if (!authData || "error" in authData) {
         throw new Error("Authentication failed: Invalid response");
       }
 
@@ -119,6 +128,8 @@ export class PolkadotAuthClient {
   async signOut() {
     const response = await fetch("/api/auth/sign-out", {
       method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
       credentials: "include",
     });
 

@@ -2,64 +2,74 @@
 
 import { useWallet } from "@/lib/contexts/wallet-context";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Shield, LogOut, Copy } from "lucide-react";
+import { Identicon } from "@/components/ui/identicon";
+import { LogOut, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
+import { useState } from "react";
 
 export function AccountInfo() {
   const { user, signOut } = useWallet();
+  const [copied, setCopied] = useState(false);
+
+  if (!user) return null;
 
   const copyAddress = () => {
     navigator.clipboard.writeText(user.address);
-    toast.success("Address copied to clipboard");
-  };
-
-  const truncateAddress = (address: string) => {
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+    setCopied(true);
+    toast.success("Address copied");
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
-    <>
-      <div className="flex justify-center">
-        <Shield className="h-16 w-16 text-green-500" />
+    <div className="space-y-6">
+      {/* Success indicator */}
+      <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-400">
+        <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]" />
+        Authenticated
       </div>
-      
-      <div className="space-y-2">
-        <h2 className="text-2xl font-semibold">Authenticated Successfully!</h2>
-        <p className="text-muted-foreground">
-          You are now signed in with your Polkadot wallet
-        </p>
-      </div>
-      
-      <div className="bg-secondary/50 rounded-lg p-6 space-y-4">
-        <div className="space-y-2">
-          <p className="text-sm text-muted-foreground">Connected Account</p>
-          <div className="flex items-center justify-center gap-2">
-            <Badge variant="outline" className="font-mono text-sm">
-              {truncateAddress(user.address)}
-            </Badge>
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={copyAddress}
-              className="h-8 w-8"
-            >
-              <Copy className="h-4 w-4" />
-            </Button>
-          </div>
+
+      {/* Identicon + address */}
+      <div className="flex flex-col items-center gap-4">
+        <div className="rounded-full border-2 border-zinc-700/50 p-1 shadow-[0_0_40px_-8px_#E6007A40]">
+          <Identicon address={user.address} size={72} />
         </div>
-        
-        <div className="pt-2">
-          <Button
-            variant="outline"
-            onClick={signOut}
-            className="gap-2"
-          >
-            <LogOut className="h-4 w-4" />
-            Disconnect
-          </Button>
+
+        <div className="space-y-1 text-center">
+          <h2 className="text-xl font-semibold text-white">
+            Signed in successfully
+          </h2>
+          <p className="text-sm text-zinc-500">
+            Session active via Better-Auth
+          </p>
         </div>
       </div>
-    </>
+
+      {/* Address display */}
+      <div className="mx-auto max-w-sm">
+        <button
+          onClick={copyAddress}
+          className="flex w-full items-center justify-between gap-3 rounded-xl border border-zinc-800 bg-zinc-900/80 px-4 py-3 transition-colors hover:border-zinc-700"
+        >
+          <code className="truncate font-mono text-sm text-zinc-300">
+            {user.address}
+          </code>
+          {copied ? (
+            <Check className="h-4 w-4 shrink-0 text-emerald-400" />
+          ) : (
+            <Copy className="h-4 w-4 shrink-0 text-zinc-600" />
+          )}
+        </button>
+      </div>
+
+      {/* Disconnect */}
+      <Button
+        variant="ghost"
+        onClick={signOut}
+        className="cursor-pointer gap-2 text-zinc-500 hover:bg-zinc-800/60 hover:text-zinc-300"
+      >
+        <LogOut className="h-4 w-4" />
+        Disconnect
+      </Button>
+    </div>
   );
 }

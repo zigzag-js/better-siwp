@@ -1,12 +1,12 @@
 {
-  "name": "better-siws-monorepo",
+  "name": "better-siwp-monorepo",
   "version": "0.0.0",
   "private": true,
-  "description": "Monorepo for better-siws - Sign-In with Substrate plugin for Better Auth",
+  "description": "Monorepo for @zig-zag/better-siwp - Sign-In with Polkadot plugin for Better Auth",
   "scripts": {
     "dev": "pnpm --filter example-nextjs dev",
     "build": "pnpm -r build",
-    "build:package": "pnpm --filter better-siws build",
+    "build:package": "pnpm --filter @zig-zag/better-siwp build",
     "test": "pnpm -r test",
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck",

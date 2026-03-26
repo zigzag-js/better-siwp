@@ -6,10 +6,17 @@ import { toast } from "sonner";
 
 interface Account {
   address: string;
-  meta: {
-    name?: string;
-    source: string;
-  };
+  name?: string;
+  source?: string;
+  type?: string;
+}
+
+interface UserInfo {
+  address: string;
+  walletAddress?: string;
+  email?: string;
+  name?: string;
+  id?: string;
 }
 
 interface WalletContextType {
@@ -18,7 +25,7 @@ interface WalletContextType {
   isConnecting: boolean;
   isSigningIn: boolean;
   isAuthenticated: boolean;
-  user: any;
+  user: UserInfo | null;
   connect: (walletName?: string) => Promise<void>;
   signIn: (account?: Account) => Promise<void>;
   signOut: () => Promise<void>;
@@ -34,7 +41,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const [isConnecting, setIsConnecting] = useState(false);
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<UserInfo | null>(null);
 
   useEffect(() => {
     checkAuthStatus();
@@ -89,19 +96,17 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
     setIsSigningIn(true);
     try {
-      const authData = await client.signIn(account);
-      
+      await client.signIn(account);
+
       // Refresh the session to get the latest user data
       await checkAuthStatus();
       
       // If checkAuthStatus didn't update, use the response data
       if (!isAuthenticated) {
         setIsAuthenticated(true);
-        // Use the account address directly since authData might not have full user info
         setUser({
           address: account.address,
           walletAddress: account.address,
-          ...authData?.user
         });
       }
       
@@ -122,7 +127,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       setSelectedAccount(null);
       setAccounts([]);
       toast.success("Signed out successfully");
-    } catch (error) {
+    } catch {
       toast.error("Failed to sign out");
     }
   };
