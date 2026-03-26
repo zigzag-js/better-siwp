@@ -10,9 +10,10 @@ export async function signInWithPolkadot(
     walletAddress: address,
   });
   if (nonceResponse.error) {
-    throw new Error(
-      `Failed to get nonce: ${nonceResponse.error.message || nonceResponse.error}`
-    );
+    const msg = typeof nonceResponse.error === "string"
+      ? nonceResponse.error
+      : nonceResponse.error.message || JSON.stringify(nonceResponse.error);
+    throw new Error(`Failed to get nonce: ${msg}`);
   }
   const { nonce } = nonceResponse.data || nonceResponse;
 
