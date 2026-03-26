@@ -5,6 +5,7 @@
   "description": "Monorepo for @zig-zag/better-siwp - Sign-In with Polkadot plugin for Better Auth",
   "scripts": {
     "dev": "pnpm --filter example-nextjs dev",
+    "dev:lunokit": "pnpm --filter example-nextjs-lunokit dev",
     "build": "pnpm -r build",
     "build:package": "pnpm --filter @zig-zag/better-siwp build",
     "test": "pnpm -r test",
