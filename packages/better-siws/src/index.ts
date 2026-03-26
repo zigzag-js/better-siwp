@@ -6,20 +6,20 @@ import type { BetterAuthPlugin } from "better-auth/types";
 import type { BetterAuthUser, BetterAuthSession } from "./types";
 
 /**
- * SIWS (Sign-In with Substrate) Plugin for Better Auth
- * 
+ * SIWP (Sign-In with Polkadot) Plugin for Better Auth
+ *
  * This plugin enables Polkadot/Substrate wallet authentication in Better Auth applications.
- * It follows the SIWS standard created by Talisman and provides a similar API to Better Auth's
- * built-in SIWE plugin.
- * 
+ * It uses the SIWS standard created by Talisman under the hood and provides a similar API
+ * to Better Auth's built-in SIWE plugin.
+ *
  * @example
  * ```typescript
  * import { betterAuth } from "better-auth";
- * import { siws } from "better-siws";
- * 
+ * import { siwp } from "@zig-zag/better-siwp";
+ *
  * export const auth = betterAuth({
  *   plugins: [
- *     siws({
+ *     siwp({
  *       domain: "example.com",
  *     }),
  *   ],
@@ -27,19 +27,19 @@ import type { BetterAuthUser, BetterAuthSession } from "./types";
  * ```
  */
 
-export interface SIWSOptions {
+export interface SIWPOptions {
   /**
    * The domain requesting the signature (without protocol)
    * @example "example.com" or "localhost:3000"
    */
   domain: string;
-  
+
   /**
    * Custom nonce generation function
    * @default Generates a random alphanumeric string
    */
   getNonce?: () => Promise<string>;
-  
+
   /**
    * Custom message verification function
    * @default Uses verifySIWS from @talismn/siws
@@ -49,7 +49,7 @@ export interface SIWSOptions {
     signature: string;
     address: string;
   }) => Promise<boolean>;
-  
+
   /**
    * Function to extract/generate user info from the verified message
    */
@@ -63,7 +63,7 @@ export interface SIWSOptions {
     name?: string;
     image?: string;
   }>;
-  
+
   /**
    * Email domain for generated email addresses
    * @default Uses the main domain
@@ -71,11 +71,11 @@ export interface SIWSOptions {
   emailDomainName?: string;
 }
 
-export const siws = (options: SIWSOptions): BetterAuthPlugin => ({
-  id: "siws",
+export const siwp = (options: SIWPOptions) => ({
+  id: "siwp",
   endpoints: {
-    getSiweNonce: createAuthEndpoint(
-      "/siwe/nonce",
+    getNonce: createAuthEndpoint(
+      "/siwp/nonce",
       {
         method: "POST",
         body: z.object({
@@ -84,24 +84,24 @@ export const siws = (options: SIWSOptions): BetterAuthPlugin => ({
       },
       async (ctx) => {
         const { walletAddress } = ctx.body;
-        
-        const nonce = options.getNonce 
+
+        const nonce = options.getNonce
           ? await options.getNonce()
-          : Math.random().toString(36).substring(2, 15) + 
+          : Math.random().toString(36).substring(2, 15) +
             Math.random().toString(36).substring(2, 15);
-        
+
         await ctx.context.internalAdapter.createVerificationValue({
-          identifier: `siws:${walletAddress}`,
+          identifier: `siwp:${walletAddress}`,
           value: nonce,
           expiresAt: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes
         });
-        
+
         return ctx.json({ nonce });
       }
     ),
-    
-    verifySiweMessage: createAuthEndpoint(
-      "/siwe/verify",
+
+    verify: createAuthEndpoint(
+      "/siwp/verify",
       {
         method: "POST",
         body: z.object({
@@ -113,51 +113,51 @@ export const siws = (options: SIWSOptions): BetterAuthPlugin => ({
       },
       async (ctx) => {
         const { message, signature, walletAddress } = ctx.body;
-        
+
         try {
           // Parse and validate the SIWS message
           const siwsMessage = parseMessage(message);
-          
+
           if (siwsMessage.address !== walletAddress) {
             throw new Error("Address mismatch");
           }
-          
+
           if (siwsMessage.domain !== options.domain) {
             throw new Error("Domain mismatch");
           }
-          
+
           // Verify nonce
           const storedNonce = await ctx.context.internalAdapter.findVerificationValue(
-            `siws:${walletAddress}`
+            `siwp:${walletAddress}`
           );
-          
+
           if (!storedNonce || storedNonce.value !== siwsMessage.nonce) {
             throw new Error("Invalid or expired nonce");
           }
-          
+
           // Delete nonce to prevent replay
-          await ctx.context.internalAdapter.deleteVerificationValue(
-            storedNonce.id
+          await ctx.context.internalAdapter.deleteVerificationByIdentifier(
+            `siwp:${walletAddress}`
           );
-          
+
           // Verify signature
           const isValid = options.verifyMessage
             ? await options.verifyMessage({ message, signature, address: walletAddress })
             : await verifySIWS(message, signature, walletAddress);
-            
+
           if (!isValid) {
             throw new Error("Invalid signature");
           }
-          
+
           // Get user info
           const userInfo = options.getUserInfo
             ? await options.getUserInfo({ message, address: walletAddress, signature })
             : {};
-          
+
           // Generate email if not provided
           const emailDomain = options.emailDomainName || options.domain;
           const userEmail = (userInfo.email || `${walletAddress}@${emailDomain}`).toLowerCase();
-          
+
           // Find or create user
           let user = await ctx.context.adapter.findOne({
             model: "user",
@@ -165,7 +165,7 @@ export const siws = (options: SIWSOptions): BetterAuthPlugin => ({
               { field: "email", operator: "eq", value: userEmail }
             ]
           }) as BetterAuthUser | null;
-          
+
           if (!user) {
             user = await ctx.context.internalAdapter.createUser({
               email: userEmail,
@@ -173,45 +173,44 @@ export const siws = (options: SIWSOptions): BetterAuthPlugin => ({
               image: userInfo.image || "",
             }) as BetterAuthUser;
           }
-          
+
           // Check if account exists for this wallet
           const existingAccount = await ctx.context.adapter.findOne({
             model: "account",
             where: [
               { field: "userId", operator: "eq", value: user.id },
-              { field: "providerId", operator: "eq", value: "siws" },
+              { field: "providerId", operator: "eq", value: "siwp" },
               { field: "accountId", operator: "eq", value: walletAddress }
             ]
           });
-          
+
           if (!existingAccount) {
             // Create account link
             await ctx.context.internalAdapter.createAccount({
               userId: user.id,
-              providerId: "siws",
+              providerId: "siwp",
               accountId: walletAddress,
             });
           }
-          
+
           // Create session
           const session = await ctx.context.internalAdapter.createSession(
-            user!.id,
-            ctx
+            user!.id
           ) as BetterAuthSession | null;
-          
+
           if (!session) {
             throw new Error("Failed to create session");
           }
-          
+
           // Set session cookie
-          await setSessionCookie(ctx, { 
-            session, 
+          await setSessionCookie(ctx, {
+            session,
             user: {
               ...user!,
-              emailVerified: !!user!.emailVerified // Convert to boolean
+              emailVerified: !!user!.emailVerified
             }
           });
-          
+
           return ctx.json({
             token: session.token,
             success: true,
@@ -236,4 +235,4 @@ export type { SiwsMessage } from "@talismn/siws";
 export { parseMessage, verifySIWS } from "@talismn/siws";
 
 // Export client plugin
-export { siwsClient } from "./client";
+export { siwpClient } from "./client";

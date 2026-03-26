@@ -1,2 +1,2 @@
 // Re-export client plugin types
-export { siwsClient } from "./dist/index";
+export { siwpClient } from "./dist/index";
