@@ -1,60 +1,69 @@
-# better-siws
+# @zig-zag/better-siwp
 
-Sign-In with Substrate (SIWS) plugin for Better Auth - bringing Polkadot wallet authentication to the JavaScript ecosystem.
+Sign In With Polkadot (SIWP) plugin for [Better-Auth](https://better-auth.com). Wallet authentication for Polkadot applications — one plugin, one signature, full session management.
 
-## 📦 Packages
+Uses the [SIWS standard](https://github.com/TalismanSociety/siws) by Talisman under the hood.
 
-This monorepo contains:
-
-- **[`better-siws`](./packages/better-siws)** - The npm package for Better Auth SIWS plugin
-- **[Example App](./examples/nextjs-app)** - Full Next.js example implementation
-
-## 🚀 Quick Start
-
-### Using the Plugin
+## Installation
 
 ```bash
-npm install better-siws
+npm i @zig-zag/better-siwp
 ```
+
+## Server Setup
 
 ```typescript
 import { betterAuth } from "better-auth";
-import { siws } from "better-siws";
+import { siwp } from "@zig-zag/better-siwp";
 
 export const auth = betterAuth({
   plugins: [
-    siws({
-      domain: "example.com"
-    })
-  ]
+    siwp({ domain: "example.com" }),
+  ],
 });
 ```
 
-### Development Setup
+## Client Setup
 
-This project uses pnpm workspaces:
+```typescript
+import { createAuthClient } from "better-auth/client";
+import { siwpClient } from "@zig-zag/better-siwp/client";
 
-```bash
-# Install dependencies
-pnpm install
+export const authClient = createAuthClient({
+  plugins: [siwpClient()],
+});
 
-# Build the package
-pnpm build:package
+// Request a nonce
+const { data } = await authClient.siwp.nonce({ walletAddress: "5Grw..." });
 
-# Run the example app
-pnpm dev
+// Verify a signed message
+await authClient.siwp.verify({ message, signature, walletAddress });
 ```
 
-## 📖 Documentation
+## Examples
 
-- [Plugin Documentation](./packages/better-siws/README.md)
-- [Example Implementation](./examples/nextjs-app/README.md)
-- [Blog Post: Why I Built better-siws](./artifacts/blog-new-narrative.md)
+This monorepo includes two working example apps:
 
-## 🤝 Contributing
+| Example | Stack | Description |
+|---------|-------|-------------|
+| [`examples/nextjs-lunokit`](./examples/nextjs-lunokit) | LunoKit + Dedot | **Recommended** — modern Polkadot stack with LunoKit wallet connection |
+| [`examples/nextjs-app`](./examples/nextjs-app) | @polkadot/extension-dapp | Legacy stack with manual extension handling |
 
-Contributions are welcome! Please read our contributing guidelines before submitting PRs.
+## Development
 
-## 📄 License
+```bash
+pnpm install
+pnpm build:package          # Build the plugin
+pnpm dev:lunokit            # Run the LunoKit example
+pnpm dev                    # Run the legacy example
+pnpm test                   # Run tests (25 tests, 96% coverage)
+```
 
-MIT © [Yogesh Kothari](https://github.com/itsyogesh)
+## Part of the ZigZag Ecosystem
+
+- [`@zig-zag/chains`](https://github.com/zigzag-js/chains) — Chain registry for Polkadot SDK chains
+- [`@zig-zag/better-siwp`](https://github.com/zigzag-js/better-siwp) — This package
+
+## License
+
+MIT
