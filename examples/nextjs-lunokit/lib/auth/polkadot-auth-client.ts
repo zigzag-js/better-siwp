@@ -1,4 +1,5 @@
 import { SiwsMessage } from "@talismn/siws";
+import { polkadot } from "@zig-zag/chains";
 import { authClient } from "@/lib/auth-client";
 
 export async function signInWithPolkadot(
@@ -10,12 +11,9 @@ export async function signInWithPolkadot(
     walletAddress: address,
   });
   if (nonceResponse.error) {
-    const msg = typeof nonceResponse.error === "string"
-      ? nonceResponse.error
-      : nonceResponse.error.message || JSON.stringify(nonceResponse.error);
-    throw new Error(`Failed to get nonce: ${msg}`);
+    throw new Error(`Failed to get nonce: ${JSON.stringify(nonceResponse.error)}`);
   }
-  const { nonce } = nonceResponse.data || nonceResponse;
+  const { nonce } = nonceResponse.data;
 
   // 2. Build SIWS message
   const domain = window.location.host;
@@ -26,7 +24,7 @@ export async function signInWithPolkadot(
     statement: "Sign in with your Polkadot wallet",
     uri,
     version: "1.0.0",
-    chainId: "polkadot:91b171bb158e2d3848fa23a9f1c25182",
+    chainId: `${polkadot.network}:${polkadot.genesisHash.slice(2, 34)}`,
     nonce,
     issuedAt: Date.now(),
     expirationTime: Date.now() + 24 * 60 * 60 * 1000,

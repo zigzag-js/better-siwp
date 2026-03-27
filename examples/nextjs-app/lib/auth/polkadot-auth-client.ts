@@ -1,4 +1,5 @@
 import { SiwsMessage } from "@talismn/siws";
+import { polkadot } from "@zig-zag/chains";
 
 export class PolkadotAuthClient {
   private appName = "Better-SIWP";
@@ -80,7 +81,7 @@ export class PolkadotAuthClient {
         statement: "Sign in with your Polkadot wallet to Better-SIWP",
         uri,
         version: "1.0.0",
-        chainId: "polkadot:91b171bb158e2d3848fa23a9f1c25182",
+        chainId: `${polkadot.network}:${polkadot.genesisHash.slice(2, 34)}`,
         nonce,
         issuedAt: Date.now(),
         expirationTime: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
