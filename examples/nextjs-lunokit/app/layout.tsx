@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { WalletProvider } from "@/components/wallet/wallet-provider";
 import { AuthProvider } from "@/lib/contexts/wallet-context";
 import { Toaster } from "@/components/ui/sonner";
+import { Analytics } from "@vercel/analytics/next";
 
 const sans = DM_Sans({
   subsets: ["latin"],
@@ -45,6 +46,7 @@ export default function RootLayout({
             <AuthProvider>
               {children}
               <Toaster />
+              <Analytics />
             </AuthProvider>
           </WalletProvider>
         </ThemeProvider>
