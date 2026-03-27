@@ -385,4 +385,144 @@ describe("SIWP Plugin", () => {
       expect(user).toBeDefined();
     });
   });
+
+  describe("Nonce expiry configuration", () => {
+    it("should use default 15-minute nonce expiry", async () => {
+      const { client, db } = await createTestInstance();
+
+      await client.siwp.nonce({ walletAddress: TEST_ADDRESS });
+
+      const verifications = db["verification"] || [];
+      const nonce = verifications.find((v) =>
+        (v.identifier as string).startsWith("siwp:"),
+      );
+      expect(nonce).toBeDefined();
+      const expiresAt = new Date(nonce!.expiresAt as string).getTime();
+      const expectedExpiry = Date.now() + 15 * 60 * 1000;
+      // Allow 5 seconds tolerance
+      expect(Math.abs(expiresAt - expectedExpiry)).toBeLessThan(5000);
+    });
+
+    it("should use custom nonce expiry when configured", async () => {
+      const { client, db } = await createTestInstance({
+        nonceExpiresIn: 300, // 5 minutes
+      });
+
+      await client.siwp.nonce({ walletAddress: TEST_ADDRESS });
+
+      const verifications = db["verification"] || [];
+      const nonce = verifications.find((v) =>
+        (v.identifier as string).startsWith("siwp:"),
+      );
+      expect(nonce).toBeDefined();
+      const expiresAt = new Date(nonce!.expiresAt as string).getTime();
+      const expectedExpiry = Date.now() + 5 * 60 * 1000;
+      expect(Math.abs(expiresAt - expectedExpiry)).toBeLessThan(5000);
+    });
+  });
+
+  describe("Domain auto-detection", () => {
+    it("should throw a clear error when domain cannot be resolved", async () => {
+      const { client } = await createTestInstance({
+        domain: undefined,
+      });
+      const message = buildSiwpMessage({ domain: "localhost:3000" });
+
+      await client.siwp.nonce({ walletAddress: TEST_ADDRESS });
+
+      const res = await client.siwp.verify({
+        message,
+        signature: "valid_signature",
+        walletAddress: TEST_ADDRESS,
+      });
+
+      // In test environment, no Host header is present, so auto-detect fails gracefully
+      expect(res.error).toBeDefined();
+      expect(res.error?.status).toBe(400);
+    });
+
+    it("should use explicit domain when provided", async () => {
+      const { client } = await createTestInstance({
+        domain: TEST_DOMAIN,
+      });
+      const message = buildSiwpMessage();
+
+      await client.siwp.nonce({ walletAddress: TEST_ADDRESS });
+
+      const res = await client.siwp.verify({
+        message,
+        signature: "valid_signature",
+        walletAddress: TEST_ADDRESS,
+      });
+
+      expect(res.error).toBeNull();
+    });
+  });
+
+  describe("Structured error responses", () => {
+    it("should return ADDRESS_MISMATCH error code", async () => {
+      const { client } = await createTestInstance();
+      const differentAddress = "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty";
+      const message = buildSiwpMessage({ address: TEST_ADDRESS });
+
+      await client.siwp.nonce({ walletAddress: differentAddress });
+
+      const res = await client.siwp.verify({
+        message,
+        signature: "valid_signature",
+        walletAddress: differentAddress,
+      });
+
+      expect(res.error).toBeDefined();
+      expect(res.error?.code).toBe("ADDRESS_MISMATCH");
+    });
+
+    it("should return DOMAIN_MISMATCH error code", async () => {
+      const { client } = await createTestInstance();
+      const message = buildSiwpMessage({ domain: "evil.com" });
+
+      await client.siwp.nonce({ walletAddress: TEST_ADDRESS });
+
+      const res = await client.siwp.verify({
+        message,
+        signature: "valid_signature",
+        walletAddress: TEST_ADDRESS,
+      });
+
+      expect(res.error).toBeDefined();
+      expect(res.error?.code).toBe("DOMAIN_MISMATCH");
+    });
+
+    it("should return INVALID_NONCE error code", async () => {
+      const { client } = await createTestInstance();
+      const message = buildSiwpMessage({ nonce: "wrong_nonce" });
+
+      await client.siwp.nonce({ walletAddress: TEST_ADDRESS });
+
+      const res = await client.siwp.verify({
+        message,
+        signature: "valid_signature",
+        walletAddress: TEST_ADDRESS,
+      });
+
+      expect(res.error).toBeDefined();
+      expect(res.error?.code).toBe("INVALID_NONCE");
+    });
+
+    it("should return INVALID_SIGNATURE error code", async () => {
+      const { client } = await createTestInstance();
+      const message = buildSiwpMessage();
+
+      await client.siwp.nonce({ walletAddress: TEST_ADDRESS });
+
+      const res = await client.siwp.verify({
+        message,
+        signature: "bad_sig",
+        walletAddress: TEST_ADDRESS,
+      });
+
+      expect(res.error).toBeDefined();
+      expect(res.error?.code).toBe("INVALID_SIGNATURE");
+    });
+  });
 });

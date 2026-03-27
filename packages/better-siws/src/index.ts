@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { parseMessage, verifySIWS } from "@talismn/siws";
-import { createAuthEndpoint } from "better-auth/api";
+import { createAuthEndpoint, APIError } from "better-auth/api";
 import { setSessionCookie } from "better-auth/cookies";
 import type { BetterAuthPlugin } from "better-auth/types";
 import type { BetterAuthUser, BetterAuthSession } from "./types";
@@ -29,10 +29,17 @@ import type { BetterAuthUser, BetterAuthSession } from "./types";
 
 export interface SIWPOptions {
   /**
-   * The domain requesting the signature (without protocol)
+   * The domain requesting the signature (without protocol).
+   * If not provided, the domain is auto-detected from the request Host header.
    * @example "example.com" or "localhost:3000"
    */
-  domain: string;
+  domain?: string;
+
+  /**
+   * How long a nonce is valid, in seconds.
+   * @default 900 (15 minutes)
+   */
+  nonceExpiresIn?: number;
 
   /**
    * Custom nonce generation function
@@ -66,12 +73,25 @@ export interface SIWPOptions {
 
   /**
    * Email domain for generated email addresses
-   * @default Uses the main domain
+   * @default Uses the resolved domain
    */
   emailDomainName?: string;
 }
 
-export const siwp = (options: SIWPOptions) => ({
+const DEFAULT_NONCE_EXPIRES_IN = 15 * 60; // 15 minutes in seconds
+
+function resolveDomain(options: SIWPOptions, request?: Request): string {
+  if (options.domain) return options.domain;
+  if (request) {
+    const host = request.headers.get("host") || request.headers.get("x-forwarded-host");
+    if (host) return host.split(":")[0] === "localhost" ? host : host;
+  }
+  throw new APIError("BAD_REQUEST", {
+    message: "Domain could not be determined. Set the domain option or ensure the Host header is present.",
+  });
+}
+
+export const siwp = (options: SIWPOptions = {}) => ({
   id: "siwp",
   endpoints: {
     getNonce: createAuthEndpoint(
@@ -90,10 +110,12 @@ export const siwp = (options: SIWPOptions) => ({
           : Math.random().toString(36).substring(2, 15) +
             Math.random().toString(36).substring(2, 15);
 
+        const expiresInMs = (options.nonceExpiresIn ?? DEFAULT_NONCE_EXPIRES_IN) * 1000;
+
         await ctx.context.internalAdapter.createVerificationValue({
           identifier: `siwp:${walletAddress}`,
           value: nonce,
-          expiresAt: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes
+          expiresAt: new Date(Date.now() + expiresInMs),
         });
 
         return ctx.json({ nonce });
@@ -115,15 +137,23 @@ export const siwp = (options: SIWPOptions) => ({
         const { message, signature, walletAddress } = ctx.body;
 
         try {
+          const domain = resolveDomain(options, ctx.request);
+
           // Parse and validate the SIWS message
           const siwsMessage = parseMessage(message);
 
           if (siwsMessage.address !== walletAddress) {
-            throw new Error("Address mismatch");
+            throw new APIError("BAD_REQUEST", {
+              message: "Address in message does not match wallet address",
+              code: "ADDRESS_MISMATCH",
+            });
           }
 
-          if (siwsMessage.domain !== options.domain) {
-            throw new Error("Domain mismatch");
+          if (siwsMessage.domain !== domain) {
+            throw new APIError("BAD_REQUEST", {
+              message: "Domain in message does not match server domain",
+              code: "DOMAIN_MISMATCH",
+            });
           }
 
           // Verify nonce
@@ -132,7 +162,10 @@ export const siwp = (options: SIWPOptions) => ({
           );
 
           if (!storedNonce || storedNonce.value !== siwsMessage.nonce) {
-            throw new Error("Invalid or expired nonce");
+            throw new APIError("UNAUTHORIZED", {
+              message: "Invalid or expired nonce",
+              code: "INVALID_NONCE",
+            });
           }
 
           // Delete nonce to prevent replay
@@ -146,7 +179,10 @@ export const siwp = (options: SIWPOptions) => ({
             : await verifySIWS(message, signature, walletAddress);
 
           if (!isValid) {
-            throw new Error("Invalid signature");
+            throw new APIError("UNAUTHORIZED", {
+              message: "Invalid signature",
+              code: "INVALID_SIGNATURE",
+            });
           }
 
           // Get user info
@@ -155,7 +191,7 @@ export const siwp = (options: SIWPOptions) => ({
             : {};
 
           // Generate email if not provided
-          const emailDomain = options.emailDomainName || options.domain;
+          const emailDomain = options.emailDomainName || domain;
           const userEmail = (userInfo.email || `${walletAddress}@${emailDomain}`).toLowerCase();
 
           // Find or create user
@@ -185,7 +221,6 @@ export const siwp = (options: SIWPOptions) => ({
           });
 
           if (!existingAccount) {
-            // Create account link
             await ctx.context.internalAdapter.createAccount({
               userId: user.id,
               providerId: "siwp",
@@ -199,7 +234,9 @@ export const siwp = (options: SIWPOptions) => ({
           ) as BetterAuthSession | null;
 
           if (!session) {
-            throw new Error("Failed to create session");
+            throw new APIError("INTERNAL_SERVER_ERROR", {
+              message: "Failed to create session",
+            });
           }
 
           // Set session cookie
@@ -220,10 +257,10 @@ export const siwp = (options: SIWPOptions) => ({
             },
           });
         } catch (error) {
-          return ctx.json(
-            { error: error instanceof Error ? error.message : "Verification failed" },
-            { status: 401 }
-          );
+          if (error instanceof APIError) throw error;
+          throw new APIError("UNAUTHORIZED", {
+            message: error instanceof Error ? error.message : "Verification failed",
+          });
         }
       }
     ),

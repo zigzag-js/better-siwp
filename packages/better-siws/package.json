@@ -1,6 +1,6 @@
 {
   "name": "@zig-zag/better-siwp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Sign-In with Polkadot (SIWP) plugin for Better Auth - Polkadot wallet authentication made simple",
   "author": "Yogesh Kumar (https://github.com/itsyogesh)",
   "license": "MIT",
