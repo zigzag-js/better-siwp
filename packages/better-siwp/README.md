@@ -219,7 +219,7 @@ import { siwpClient } from "@zig-zag/better-siwp/client";
 After adding `siwpClient()` to your auth client:
 
 ```typescript
-// Request a nonce (15-minute expiry, single use)
+// Request a nonce (configurable expiry, single use)
 const { data, error } = await authClient.siwp.nonce({
   walletAddress: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
 });
@@ -238,8 +238,12 @@ const { data, error } = await authClient.siwp.verify({
 
 ```typescript
 siwp({
-  // Required: your domain without protocol
+  // Optional: your domain without protocol
+  // If not set, auto-detected from the request Origin header
   domain: "example.com",
+
+  // Optional: nonce lifetime in seconds (default: 900 = 15 minutes)
+  nonceExpiresIn: 600, // 10 minutes
 
   // Optional: custom nonce generation
   getNonce: async () => {
@@ -262,18 +266,53 @@ siwp({
   },
 
   // Optional: domain for generated email addresses
-  // Default: uses the main domain (e.g., "5Grw...@example.com")
+  // Default: uses the resolved domain (e.g., "5Grw...@example.com")
   emailDomainName: "users.example.com",
 });
 ```
 
 | Option | Type | Required | Default |
 |--------|------|----------|---------|
-| `domain` | `string` | Yes | — |
+| `domain` | `string` | No | Auto-detected from `Origin` or `Host` header |
+| `nonceExpiresIn` | `number` | No | `900` (15 minutes, in seconds) |
 | `getNonce` | `() => Promise<string>` | No | Random alphanumeric string |
 | `verifyMessage` | `(params) => Promise<boolean>` | No | `verifySIWS` from @talismn/siws |
 | `getUserInfo` | `(params) => Promise<UserInfo>` | No | Name from truncated address |
-| `emailDomainName` | `string` | No | Same as `domain` |
+| `emailDomainName` | `string` | No | Same as resolved `domain` |
+
+> **Note:** When your API and frontend run on different ports (e.g., API on 3001, frontend on 3000), the domain is auto-detected from the `Origin` header sent by the browser, which contains the frontend's domain. If you need explicit control, set the `domain` option.
+
+## Error Handling
+
+Verification errors throw structured `APIError` responses with machine-readable error codes:
+
+```typescript
+const { data, error } = await authClient.siwp.verify({ ... });
+
+if (error) {
+  switch (error.code) {
+    case "ADDRESS_MISMATCH":
+      // Address in message doesn't match walletAddress
+      break;
+    case "DOMAIN_MISMATCH":
+      // Domain in message doesn't match server domain
+      break;
+    case "INVALID_NONCE":
+      // Nonce expired or doesn't match
+      break;
+    case "INVALID_SIGNATURE":
+      // Wallet signature verification failed
+      break;
+  }
+}
+```
+
+| Error Code | HTTP Status | When |
+|-----------|-------------|------|
+| `ADDRESS_MISMATCH` | 400 | Wallet address in SIWS message doesn't match the `walletAddress` parameter |
+| `DOMAIN_MISMATCH` | 400 | Domain in SIWS message doesn't match the server's domain |
+| `INVALID_NONCE` | 401 | Nonce expired (default: 15 min) or was already used |
+| `INVALID_SIGNATURE` | 401 | Cryptographic signature verification failed |
 
 ## How It Works
 
