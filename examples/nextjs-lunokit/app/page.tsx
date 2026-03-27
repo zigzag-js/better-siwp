@@ -1,5 +1,6 @@
 import { HeroSection } from "@/components/hero-section";
 import { AuthCard } from "@/components/auth/auth-card";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 export default function HomePage() {
   return (
@@ -19,6 +20,11 @@ export default function HomePage() {
           backgroundSize: "32px 32px",
         }}
       />
+
+      {/* Theme toggle — top right */}
+      <div className="absolute right-4 top-4 z-20">
+        <ThemeToggle />
+      </div>
 
       <div className="relative z-10 mx-auto max-w-3xl px-6 py-20 md:py-28">
         <HeroSection />
