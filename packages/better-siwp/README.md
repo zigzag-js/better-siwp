@@ -52,12 +52,14 @@ export const auth = betterAuth({
 ```typescript
 // lib/auth-client.ts
 import { createAuthClient } from "better-auth/client";
-import { siwpClient } from "@zig-zag/better-siwp/client";
+import { siwpClient } from "@zig-zag/better-siwp";
 
 export const authClient = createAuthClient({
   plugins: [siwpClient()],
 });
 ```
+
+> **Tip:** You can also import from `@zig-zag/better-siwp/client` if you want to avoid bundling server-side code (like `@talismn/siws` and `zod`) in your client bundle. Both imports export the same `siwpClient`.
 
 ### 3. API Route (Next.js)
 
@@ -207,7 +209,9 @@ import type { SIWPOptions, SiwsMessage } from "@zig-zag/better-siwp";
 ### Client Exports
 
 ```typescript
-import { siwpClient } from "@zig-zag/better-siwp/client";
+import { siwpClient } from "@zig-zag/better-siwp";
+// or for smaller client bundles:
+// import { siwpClient } from "@zig-zag/better-siwp/client";
 ```
 
 | Export | Description |
