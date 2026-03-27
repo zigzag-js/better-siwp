@@ -30,12 +30,12 @@ export function AccountInfo() {
 
       {/* Identicon + address */}
       <div className="flex flex-col items-center gap-4">
-        <div className="rounded-full border-2 border-zinc-700/50 p-1 shadow-[0_0_40px_-8px_#E6007A40]">
+        <div className="rounded-full border-2 border-zinc-300 p-1 shadow-[0_0_40px_-8px_#E6007A40] dark:border-zinc-700/50">
           <Identicon address={user.address} size={72} />
         </div>
 
         <div className="space-y-1 text-center">
-          <h2 className="text-xl font-semibold text-white">
+          <h2 className="text-xl font-semibold text-zinc-900 dark:text-white">
             Signed in successfully
           </h2>
           <p className="text-sm text-zinc-500">
@@ -48,9 +48,9 @@ export function AccountInfo() {
       <div className="mx-auto max-w-sm">
         <button
           onClick={copyAddress}
-          className="flex w-full items-center justify-between gap-3 rounded-xl border border-zinc-800 bg-zinc-900/80 px-4 py-3 transition-colors hover:border-zinc-700"
+          className="flex w-full items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-zinc-100 px-4 py-3 transition-colors hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900/80 dark:hover:border-zinc-700"
         >
-          <code className="truncate font-mono text-sm text-zinc-300">
+          <code className="truncate font-mono text-sm text-zinc-700 dark:text-zinc-300">
             {user.address}
           </code>
           {copied ? (
@@ -65,7 +65,7 @@ export function AccountInfo() {
       <Button
         variant="ghost"
         onClick={signOut}
-        className="cursor-pointer gap-2 text-zinc-500 hover:bg-zinc-800/60 hover:text-zinc-300"
+        className="cursor-pointer gap-2 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800/60 dark:hover:text-zinc-300"
       >
         <LogOut className="h-4 w-4" />
         Disconnect

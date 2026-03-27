@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import { DM_Sans, JetBrains_Mono } from "next/font/google";
+import { DM_Sans, JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import "./globals.css";
+import { ThemeProvider } from "@/components/theme-provider";
 import { WalletProvider } from "@/components/wallet/wallet-provider";
 import { AuthProvider } from "@/lib/contexts/wallet-context";
 import { Toaster } from "@/components/ui/sonner";
@@ -9,6 +10,12 @@ const sans = DM_Sans({
   subsets: ["latin"],
   variable: "--font-sans",
   weight: ["400", "500", "600", "700"],
+});
+
+const display = Space_Grotesk({
+  subsets: ["latin"],
+  variable: "--font-display",
+  weight: ["500", "600", "700"],
 });
 
 const mono = JetBrains_Mono({
@@ -29,16 +36,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
-        className={`${sans.variable} ${mono.variable} font-sans antialiased`}
+        className={`${sans.variable} ${display.variable} ${mono.variable} font-sans antialiased`}
       >
-        <WalletProvider>
-          <AuthProvider>
-            {children}
-            <Toaster />
-          </AuthProvider>
-        </WalletProvider>
+        <ThemeProvider>
+          <WalletProvider>
+            <AuthProvider>
+              {children}
+              <Toaster />
+            </AuthProvider>
+          </WalletProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

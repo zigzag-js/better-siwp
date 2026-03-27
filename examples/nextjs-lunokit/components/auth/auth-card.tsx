@@ -16,7 +16,7 @@ export function AuthCard() {
 
   return (
     <>
-      <div className="rounded-2xl border border-zinc-800/80 bg-zinc-900/50 p-8 shadow-2xl shadow-black/20 backdrop-blur-xl md:p-12">
+      <div className="rounded-2xl border border-zinc-200 bg-white/80 p-8 shadow-2xl shadow-black/5 backdrop-blur-xl dark:border-zinc-800/80 dark:bg-zinc-900/50 dark:shadow-black/20 md:p-12">
         <div className="mx-auto max-w-lg text-center">
           {isAuthenticated && user ? (
             <AccountInfo />
@@ -25,7 +25,7 @@ export function AuthCard() {
               <div className="mb-2 text-sm font-medium uppercase tracking-widest text-zinc-500">
                 Try it out
               </div>
-              <h2 className="mb-3 text-2xl font-semibold text-white">
+              <h2 className="mb-3 text-2xl font-semibold text-zinc-900 dark:text-white">
                 {isConnected ? "Sign the Message" : "Connect Your Wallet"}
               </h2>
               <p className="mb-8 text-zinc-500">
@@ -70,11 +70,11 @@ export function AuthCard() {
 
       {/* Feature cards */}
       <div className="mt-8 grid gap-4 md:grid-cols-3">
-        <div className="group rounded-xl border border-zinc-800/60 bg-zinc-900/30 p-6 transition-colors hover:border-[#E6007A]/30 hover:bg-zinc-900/60">
-          <div className="mb-4 inline-flex rounded-lg border border-zinc-800 bg-zinc-900 p-2.5">
+        <div className="group rounded-xl border border-zinc-200 bg-zinc-50 p-6 transition-colors hover:border-[#E6007A]/30 hover:bg-zinc-100 dark:border-zinc-800/60 dark:bg-zinc-900/30 dark:hover:bg-zinc-900/60">
+          <div className="mb-4 inline-flex rounded-lg border border-zinc-200 bg-zinc-100 p-2.5 dark:border-zinc-800 dark:bg-zinc-900">
             <Shield className="h-5 w-5 text-[#E6007A]" />
           </div>
-          <h3 className="mb-1.5 font-semibold text-zinc-200">
+          <h3 className="mb-1.5 font-semibold text-zinc-800 dark:text-zinc-200">
             LunoKit + Dedot
           </h3>
           <p className="text-sm leading-relaxed text-zinc-500">
@@ -82,21 +82,21 @@ export function AuthCard() {
             interaction via Dedot.
           </p>
         </div>
-        <div className="group rounded-xl border border-zinc-800/60 bg-zinc-900/30 p-6 transition-colors hover:border-[#E6007A]/30 hover:bg-zinc-900/60">
-          <div className="mb-4 inline-flex rounded-lg border border-zinc-800 bg-zinc-900 p-2.5">
+        <div className="group rounded-xl border border-zinc-200 bg-zinc-50 p-6 transition-colors hover:border-[#E6007A]/30 hover:bg-zinc-100 dark:border-zinc-800/60 dark:bg-zinc-900/30 dark:hover:bg-zinc-900/60">
+          <div className="mb-4 inline-flex rounded-lg border border-zinc-200 bg-zinc-100 p-2.5 dark:border-zinc-800 dark:bg-zinc-900">
             <Zap className="h-5 w-5 text-[#E6007A]" />
           </div>
-          <h3 className="mb-1.5 font-semibold text-zinc-200">One Signature</h3>
+          <h3 className="mb-1.5 font-semibold text-zinc-800 dark:text-zinc-200">One Signature</h3>
           <p className="text-sm leading-relaxed text-zinc-500">
             Connect, sign, authenticated. Full session management handled by
             Better-Auth.
           </p>
         </div>
-        <div className="group rounded-xl border border-zinc-800/60 bg-zinc-900/30 p-6 transition-colors hover:border-[#E6007A]/30 hover:bg-zinc-900/60">
-          <div className="mb-4 inline-flex rounded-lg border border-zinc-800 bg-zinc-900 p-2.5">
+        <div className="group rounded-xl border border-zinc-200 bg-zinc-50 p-6 transition-colors hover:border-[#E6007A]/30 hover:bg-zinc-100 dark:border-zinc-800/60 dark:bg-zinc-900/30 dark:hover:bg-zinc-900/60">
+          <div className="mb-4 inline-flex rounded-lg border border-zinc-200 bg-zinc-100 p-2.5 dark:border-zinc-800 dark:bg-zinc-900">
             <Globe className="h-5 w-5 text-[#E6007A]" />
           </div>
-          <h3 className="mb-1.5 font-semibold text-zinc-200">
+          <h3 className="mb-1.5 font-semibold text-zinc-800 dark:text-zinc-200">
             Any Polkadot Wallet
           </h3>
           <p className="text-sm leading-relaxed text-zinc-500">
