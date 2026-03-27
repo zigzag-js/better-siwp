@@ -31,9 +31,12 @@ export function AuthCard() {
 
               {isConnected ? (
                 <>
+                  <p className="mb-2 text-sm text-zinc-500">
+                    Prove you own this wallet to complete authentication.
+                  </p>
                   <div className="mb-8 flex items-center justify-center gap-2 text-zinc-500">
                     <Identicon address={account.address} size={20} />
-                    <span>
+                    <span className="font-mono text-sm">
                       {account.address.slice(0, 6)}...{account.address.slice(-4)}
                     </span>
                   </div>
