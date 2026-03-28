@@ -7,7 +7,7 @@ import { AccountInfo } from "./account-info";
 import { Identicon } from "@/components/ui/identicon";
 import { Shield, Zap, Globe, Loader2, Wallet, Pen, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 export function AuthCard() {
   const { account } = useAccount();
@@ -16,6 +16,19 @@ export function AuthCard() {
   const { isAuthenticated, user, isSigningIn, signIn } = useAuth();
   const isConnected = !!account;
   const [showAccounts, setShowAccounts] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setShowAccounts(false);
+      }
+    }
+    if (showAccounts) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [showAccounts]);
 
   return (
     <>
@@ -38,68 +51,70 @@ export function AuthCard() {
                     Prove you own this wallet to complete authentication.
                   </p>
 
-                  {/* Account selector */}
-                  <div className="relative mb-6 inline-block">
-                    <button
-                      onClick={() => setShowAccounts(!showAccounts)}
-                      className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 transition-colors hover:border-zinc-300 dark:border-zinc-700 dark:bg-zinc-800/60 dark:hover:border-zinc-600"
-                    >
-                      <Identicon address={account.address} size={22} />
-                      <span className="font-mono text-sm text-zinc-700 dark:text-zinc-300">
-                        {account.name || `${account.address.slice(0, 6)}...${account.address.slice(-4)}`}
-                      </span>
-                      {accounts.length > 1 && (
-                        <ChevronDown className={`h-3.5 w-3.5 text-zinc-400 transition-transform ${showAccounts ? "rotate-180" : ""}`} />
+                  {/* Account selector + Sign button row */}
+                  <div className="mb-2 flex items-stretch justify-center gap-2">
+                    {/* Account selector */}
+                    <div className="relative" ref={dropdownRef}>
+                      <button
+                        onClick={() => setShowAccounts(!showAccounts)}
+                        className="flex h-12 items-center gap-2 rounded-xl border border-zinc-200 bg-zinc-50 px-4 transition-colors hover:border-zinc-300 dark:border-zinc-700 dark:bg-zinc-800/60 dark:hover:border-zinc-600"
+                      >
+                        <Identicon address={account.address} size={24} />
+                        <span className="max-w-[120px] truncate text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                          {account.name || `${account.address.slice(0, 6)}...${account.address.slice(-4)}`}
+                        </span>
+                        {accounts.length > 1 && (
+                          <ChevronDown className={`h-3.5 w-3.5 text-zinc-400 transition-transform ${showAccounts ? "rotate-180" : ""}`} />
+                        )}
+                      </button>
+
+                      {showAccounts && accounts.length > 1 && (
+                        <div className="absolute left-0 z-10 mt-1 w-72 rounded-xl border border-zinc-200 bg-white p-1.5 shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
+                          {accounts.map((acc) => (
+                            <button
+                              key={acc.address}
+                              onClick={() => {
+                                selectAccount(acc);
+                                setShowAccounts(false);
+                              }}
+                              className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800 ${
+                                acc.address === account.address ? "bg-zinc-100 dark:bg-zinc-800" : ""
+                              }`}
+                            >
+                              <Identicon address={acc.address} size={28} />
+                              <div className="min-w-0 flex-1">
+                                <div className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
+                                  {acc.name || "Account"}
+                                </div>
+                                <div className="truncate font-mono text-xs text-zinc-400">
+                                  {acc.address.slice(0, 8)}...{acc.address.slice(-6)}
+                                </div>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
                       )}
-                    </button>
+                    </div>
 
-                    {showAccounts && accounts.length > 1 && (
-                      <div className="absolute left-1/2 z-10 mt-1 w-64 -translate-x-1/2 rounded-xl border border-zinc-200 bg-white p-1.5 shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
-                        {accounts.map((acc) => (
-                          <button
-                            key={acc.address}
-                            onClick={() => {
-                              selectAccount(acc);
-                              setShowAccounts(false);
-                            }}
-                            className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800 ${
-                              acc.address === account.address ? "bg-zinc-100 dark:bg-zinc-800" : ""
-                            }`}
-                          >
-                            <Identicon address={acc.address} size={28} />
-                            <div className="min-w-0 flex-1">
-                              <div className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
-                                {acc.name || "Account"}
-                              </div>
-                              <div className="truncate font-mono text-xs text-zinc-400">
-                                {acc.address.slice(0, 8)}...{acc.address.slice(-6)}
-                              </div>
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  <div>
-                  <Button
-                    onClick={() => signIn()}
-                    disabled={isSigningIn}
-                    size="lg"
-                    className="relative h-12 cursor-pointer rounded-xl border-0 bg-[#E6007A] px-8 text-sm font-semibold text-white shadow-[0_0_24px_-4px_#E6007A80] transition-all hover:bg-[#CC006C] hover:shadow-[0_0_32px_-2px_#E6007A99] disabled:opacity-60"
-                  >
-                    {isSigningIn ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Signing...
-                      </>
-                    ) : (
-                      <>
-                        <Pen className="mr-2 h-4 w-4" />
-                        Sign Message
-                      </>
-                    )}
-                  </Button>
+                    {/* Sign button */}
+                    <Button
+                      onClick={() => signIn()}
+                      disabled={isSigningIn}
+                      size="lg"
+                      className="relative h-12 cursor-pointer rounded-xl border-0 bg-[#E6007A] px-6 text-sm font-semibold text-white shadow-[0_0_24px_-4px_#E6007A80] transition-all hover:bg-[#CC006C] hover:shadow-[0_0_32px_-2px_#E6007A99] disabled:opacity-60"
+                    >
+                      {isSigningIn ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Signing...
+                        </>
+                      ) : (
+                        <>
+                          <Pen className="mr-2 h-4 w-4" />
+                          Sign Message
+                        </>
+                      )}
+                    </Button>
                   </div>
                 </>
               ) : (
