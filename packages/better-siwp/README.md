@@ -28,6 +28,8 @@ npm i @zig-zag/better-siwp
 npm i better-auth zod
 ```
 
+> **Important:** Requires `better-auth` v1.5.0 or higher. The plugin uses internal APIs (`createSession` with context, `deleteVerificationByIdentifier`, `$InferServerPlugin` client pattern) that are not available in v1.3.x or v1.4.x. If you see errors like `deleteVerificationValue is not a function` or `Cannot read properties of undefined (reading 'headers')`, check your better-auth version.
+
 ## Quick Start
 
 ### 1. Server Plugin
