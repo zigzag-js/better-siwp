@@ -1,18 +1,21 @@
 "use client";
 
-import { useAccount } from "@luno-kit/react";
+import { useAccount, useAccounts } from "@luno-kit/react";
 import { useConnectModal } from "@luno-kit/ui";
 import { useAuth } from "@/lib/contexts/wallet-context";
 import { AccountInfo } from "./account-info";
 import { Identicon } from "@/components/ui/identicon";
-import { Shield, Zap, Globe, Loader2, Wallet, Pen } from "lucide-react";
+import { Shield, Zap, Globe, Loader2, Wallet, Pen, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useState } from "react";
 
 export function AuthCard() {
   const { account } = useAccount();
+  const { accounts, selectAccount } = useAccounts();
   const { open: openConnectModal } = useConnectModal();
   const { isAuthenticated, user, isSigningIn, signIn } = useAuth();
   const isConnected = !!account;
+  const [showAccounts, setShowAccounts] = useState(false);
 
   return (
     <>
@@ -31,15 +34,54 @@ export function AuthCard() {
 
               {isConnected ? (
                 <>
-                  <p className="mb-2 text-sm text-zinc-500">
+                  <p className="mb-3 text-sm text-zinc-500">
                     Prove you own this wallet to complete authentication.
                   </p>
-                  <div className="mb-8 flex items-center justify-center gap-2 text-zinc-500">
-                    <Identicon address={account.address} size={20} />
-                    <span className="font-mono text-sm">
-                      {account.address.slice(0, 6)}...{account.address.slice(-4)}
-                    </span>
+
+                  {/* Account selector */}
+                  <div className="relative mb-6 inline-block">
+                    <button
+                      onClick={() => setShowAccounts(!showAccounts)}
+                      className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 transition-colors hover:border-zinc-300 dark:border-zinc-700 dark:bg-zinc-800/60 dark:hover:border-zinc-600"
+                    >
+                      <Identicon address={account.address} size={22} />
+                      <span className="font-mono text-sm text-zinc-700 dark:text-zinc-300">
+                        {account.name || `${account.address.slice(0, 6)}...${account.address.slice(-4)}`}
+                      </span>
+                      {accounts.length > 1 && (
+                        <ChevronDown className={`h-3.5 w-3.5 text-zinc-400 transition-transform ${showAccounts ? "rotate-180" : ""}`} />
+                      )}
+                    </button>
+
+                    {showAccounts && accounts.length > 1 && (
+                      <div className="absolute left-1/2 z-10 mt-1 w-64 -translate-x-1/2 rounded-xl border border-zinc-200 bg-white p-1.5 shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
+                        {accounts.map((acc) => (
+                          <button
+                            key={acc.address}
+                            onClick={() => {
+                              selectAccount(acc);
+                              setShowAccounts(false);
+                            }}
+                            className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800 ${
+                              acc.address === account.address ? "bg-zinc-100 dark:bg-zinc-800" : ""
+                            }`}
+                          >
+                            <Identicon address={acc.address} size={28} />
+                            <div className="min-w-0 flex-1">
+                              <div className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
+                                {acc.name || "Account"}
+                              </div>
+                              <div className="truncate font-mono text-xs text-zinc-400">
+                                {acc.address.slice(0, 8)}...{acc.address.slice(-6)}
+                              </div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
+
+                  <div>
                   <Button
                     onClick={() => signIn()}
                     disabled={isSigningIn}
@@ -58,6 +100,7 @@ export function AuthCard() {
                       </>
                     )}
                   </Button>
+                  </div>
                 </>
               ) : (
                 <>
