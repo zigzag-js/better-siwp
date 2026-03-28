@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import { DM_Sans, JetBrains_Mono } from "next/font/google";
+import { DM_Sans, JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import "./globals.css";
+import { ThemeProvider } from "@/components/theme-provider";
 import { WalletProvider } from "@/lib/contexts/wallet-context";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -10,6 +11,12 @@ const sans = DM_Sans({
   weight: ["400", "500", "600", "700"],
 });
 
+const display = Space_Grotesk({
+  subsets: ["latin"],
+  variable: "--font-display",
+  weight: ["500", "600", "700"],
+});
+
 const mono = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-mono",
@@ -17,9 +24,9 @@ const mono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Better-SIWP | Sign In With Polkadot",
+  title: "Better-SIWP | @polkadot/extension-dapp Example",
   description:
-    "Production-ready Polkadot wallet authentication for Better-Auth. Part of the ZigZag ecosystem.",
+    "Polkadot wallet authentication with @polkadot/extension-dapp and Better-Auth. Part of the ZigZag ecosystem.",
 };
 
 export default function RootLayout({
@@ -28,12 +35,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className={`${sans.variable} ${mono.variable} font-sans antialiased`}>
-        <WalletProvider>
-          {children}
-          <Toaster />
-        </WalletProvider>
+    <html lang="en" suppressHydrationWarning>
+      <body
+        className={`${sans.variable} ${display.variable} ${mono.variable} font-sans antialiased`}
+      >
+        <ThemeProvider>
+          <WalletProvider>
+            {children}
+            <Toaster />
+          </WalletProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
